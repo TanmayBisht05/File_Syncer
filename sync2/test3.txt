@@ -1,4 +1,0 @@
-this is the first line of the test3.txt
-
-
-and this is the second line from client2
