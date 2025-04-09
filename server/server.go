@@ -8,7 +8,7 @@ import (
 	"os"
 
 	pb "File_Syncer/proto"
-	"File_Syncer/syncstate" // ✅ new import
+	"File_Syncer/syncstate"
 
 	"google.golang.org/grpc"
 )
@@ -21,12 +21,17 @@ func (s *syncServer) SendChange(ctx context.Context, change *pb.FileChange) (*pb
 	fmt.Println("====> Incoming file sync request")
 	log.Printf("Received: %s (%s)", change.Filename, change.Action)
 
-	syncstate.SkipNextEvent.Store(true) // ✅ Prevent loop before applying change
+	// Mark this file with a timestamp, so subsequent events are skipped.
+	syncstate.MarkAsRemoteUpdate(change.Filename)
 
 	if change.Action == "delete" {
-		os.Remove(change.Filename)
+		if err := os.Remove(change.Filename); err != nil {
+			log.Printf("Error deleting file %s: %v", change.Filename, err)
+		}
 	} else {
-		os.WriteFile(change.Filename, change.Content, 0644)
+		if err := os.WriteFile(change.Filename, change.Content, 0644); err != nil {
+			log.Printf("Error writing file %s: %v", change.Filename, err)
+		}
 	}
 
 	return &pb.Ack{Status: "OK"}, nil
