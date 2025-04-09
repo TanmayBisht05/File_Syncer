@@ -19,14 +19,14 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	SyncService_SendChange_FullMethodName = "/sync.SyncService/SendChange"
+	SyncService_Connect_FullMethodName = "/sync.SyncService/Connect"
 )
 
 // SyncServiceClient is the client API for SyncService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type SyncServiceClient interface {
-	SendChange(ctx context.Context, in *FileChange, opts ...grpc.CallOption) (*Ack, error)
+	Connect(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[FileChange, FileChange], error)
 }
 
 type syncServiceClient struct {
@@ -37,21 +37,24 @@ func NewSyncServiceClient(cc grpc.ClientConnInterface) SyncServiceClient {
 	return &syncServiceClient{cc}
 }
 
-func (c *syncServiceClient) SendChange(ctx context.Context, in *FileChange, opts ...grpc.CallOption) (*Ack, error) {
+func (c *syncServiceClient) Connect(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[FileChange, FileChange], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Ack)
-	err := c.cc.Invoke(ctx, SyncService_SendChange_FullMethodName, in, out, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &SyncService_ServiceDesc.Streams[0], SyncService_Connect_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &grpc.GenericClientStream[FileChange, FileChange]{ClientStream: stream}
+	return x, nil
 }
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type SyncService_ConnectClient = grpc.BidiStreamingClient[FileChange, FileChange]
 
 // SyncServiceServer is the server API for SyncService service.
 // All implementations must embed UnimplementedSyncServiceServer
 // for forward compatibility.
 type SyncServiceServer interface {
-	SendChange(context.Context, *FileChange) (*Ack, error)
+	Connect(grpc.BidiStreamingServer[FileChange, FileChange]) error
 	mustEmbedUnimplementedSyncServiceServer()
 }
 
@@ -62,8 +65,8 @@ type SyncServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedSyncServiceServer struct{}
 
-func (UnimplementedSyncServiceServer) SendChange(context.Context, *FileChange) (*Ack, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SendChange not implemented")
+func (UnimplementedSyncServiceServer) Connect(grpc.BidiStreamingServer[FileChange, FileChange]) error {
+	return status.Errorf(codes.Unimplemented, "method Connect not implemented")
 }
 func (UnimplementedSyncServiceServer) mustEmbedUnimplementedSyncServiceServer() {}
 func (UnimplementedSyncServiceServer) testEmbeddedByValue()                     {}
@@ -86,23 +89,12 @@ func RegisterSyncServiceServer(s grpc.ServiceRegistrar, srv SyncServiceServer) {
 	s.RegisterService(&SyncService_ServiceDesc, srv)
 }
 
-func _SyncService_SendChange_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FileChange)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(SyncServiceServer).SendChange(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: SyncService_SendChange_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SyncServiceServer).SendChange(ctx, req.(*FileChange))
-	}
-	return interceptor(ctx, in, info, handler)
+func _SyncService_Connect_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(SyncServiceServer).Connect(&grpc.GenericServerStream[FileChange, FileChange]{ServerStream: stream})
 }
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type SyncService_ConnectServer = grpc.BidiStreamingServer[FileChange, FileChange]
 
 // SyncService_ServiceDesc is the grpc.ServiceDesc for SyncService service.
 // It's only intended for direct use with grpc.RegisterService,
@@ -110,12 +102,14 @@ func _SyncService_SendChange_Handler(srv interface{}, ctx context.Context, dec f
 var SyncService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "sync.SyncService",
 	HandlerType: (*SyncServiceServer)(nil),
-	Methods: []grpc.MethodDesc{
+	Methods:     []grpc.MethodDesc{},
+	Streams: []grpc.StreamDesc{
 		{
-			MethodName: "SendChange",
-			Handler:    _SyncService_SendChange_Handler,
+			StreamName:    "Connect",
+			Handler:       _SyncService_Connect_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
 	Metadata: "proto/sync.proto",
 }

@@ -1,40 +1,71 @@
 package server
 
 import (
-	"context"
-	"fmt"
+	"File_Syncer/proto"
+	"io"
 	"log"
-	"net"
-	"os"
-
-	pb "File_Syncer/proto"
-	"File_Syncer/syncstate"
+	"sync"
 
 	"google.golang.org/grpc"
+	"net"
 )
 
 type syncServer struct {
-	pb.UnimplementedSyncServiceServer
+	proto.UnimplementedSyncServiceServer
+	clients map[string]proto.SyncService_ConnectServer
+	mu      sync.Mutex
 }
 
-func (s *syncServer) SendChange(ctx context.Context, change *pb.FileChange) (*pb.Ack, error) {
-	fmt.Println("====> Incoming file sync request")
-	log.Printf("Received: %s (%s)", change.Filename, change.Action)
+func NewSyncServer() *syncServer {
+	return &syncServer{
+		clients: make(map[string]proto.SyncService_ConnectServer),
+	}
+}
 
-	// Mark this file with a timestamp, so subsequent events are skipped.
-	syncstate.MarkAsRemoteUpdate(change.Filename)
+func (s *syncServer) Connect(stream proto.SyncService_ConnectServer) error {
+	var clientID string
 
-	if change.Action == "delete" {
-		if err := os.Remove(change.Filename); err != nil {
-			log.Printf("Error deleting file %s: %v", change.Filename, err)
+	for {
+		change, err := stream.Recv()
+		if err == io.EOF {
+			log.Println("Client disconnected:", clientID)
+			s.mu.Lock()
+			delete(s.clients, clientID)
+			s.mu.Unlock()
+			return nil
 		}
-	} else {
-		if err := os.WriteFile(change.Filename, change.Content, 0644); err != nil {
-			log.Printf("Error writing file %s: %v", change.Filename, err)
+		if err != nil {
+			log.Println("Error receiving from stream:", err)
+			return err
+		}
+
+		clientID = change.ClientId
+		log.Printf("Received change from %s: %s (%s)", clientID, change.Filename, change.Action)
+
+		// Store client stream if new
+		s.mu.Lock()
+		if _, exists := s.clients[clientID]; !exists {
+			s.clients[clientID] = stream
+		}
+		s.mu.Unlock()
+
+		// Broadcast to others
+		s.broadcast(change, clientID)
+	}
+}
+
+func (s *syncServer) broadcast(change *proto.FileChange, senderID string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	for id, clientStream := range s.clients {
+		if id == senderID {
+			continue
+		}
+		if err := clientStream.Send(change); err != nil {
+			log.Printf("Failed to send to %s: %v", id, err)
 		}
 	}
-
-	return &pb.Ack{Status: "OK"}, nil
 }
 
 func StartGRPCServer(port string) {
@@ -43,8 +74,8 @@ func StartGRPCServer(port string) {
 		log.Fatalf("failed to listen: %v", err)
 	}
 	s := grpc.NewServer()
-	pb.RegisterSyncServiceServer(s, &syncServer{})
-	fmt.Println("Server listening on port", port)
+	proto.RegisterSyncServiceServer(s, NewSyncServer())
+	log.Println("Server listening on port", port)
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}

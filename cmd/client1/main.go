@@ -2,7 +2,7 @@ package main
 
 import (
 	"File_Syncer/client"
-	"File_Syncer/server"
+	"File_Syncer/proto"
 	"File_Syncer/syncstate"
 	"File_Syncer/watcher"
 	"log"
@@ -16,40 +16,54 @@ import (
 )
 
 const watchDir = "./sync"
-const peerAddr = "localhost:50052" // Address of the other machine
+const clientID = "client1"
+const serverAddr = "localhost:50051"
 
 func main() {
-	go server.StartGRPCServer("50051")
+	log.Println("Client attempting to connect to server at", serverAddr)
 
-	// Ensure sync directory exists
+	err := client.StartClient(clientID, serverAddr, func(change *proto.FileChange) {
+		log.Println("Connected to server, stream established")
+
+		localPath := filepath.Join(watchDir, filepath.Base(change.Filename))
+		if change.Action == "delete" {
+			os.Remove(localPath)
+		} else {
+			os.WriteFile(localPath, change.Content, 0644)
+		}
+
+		// if change.Action == "delete" {
+		// 	os.Remove(change.Filename)
+		// } else {
+		// 	os.WriteFile(change.Filename, change.Content, 0644)
+		// }
+	})
+	if err != nil {
+		log.Fatalf("Failed to connect to server: %v", err)
+	}
+
 	os.MkdirAll(watchDir, 0755)
 
-	// Map and mutex for debouncing
 	var debounceMap = make(map[string]*time.Timer)
 	var debounceMu sync.Mutex
 	const debounceDuration = 100 * time.Millisecond
 
-	// Helper to schedule sending changes for a file.
 	scheduleSync := func(filename string, action string) {
 		debounceMu.Lock()
 		defer debounceMu.Unlock()
-		// If there's an existing timer, stop it.
 		if timer, ok := debounceMap[filename]; ok {
 			timer.Stop()
 		}
-		// Create a new timer.
 		debounceMap[filename] = time.AfterFunc(debounceDuration, func() {
 			log.Println("Forwarding change to peer for file:", filename)
-			client.SendChange(peerAddr, filename, action)
-			// Remove after triggering.
+			client.SendChange(serverAddr, filename, action)
 			debounceMu.Lock()
 			delete(debounceMap, filename)
 			debounceMu.Unlock()
 		})
 	}
 
-	err := watcher.Watch(watchDir, func(event fsnotify.Event) {
-		// If this file change was caused by a recent remote update, skip it.
+	err = watcher.Watch(watchDir, func(event fsnotify.Event) {
 		if syncstate.ShouldSkip(event.Name) {
 			log.Println("Skipping event from remote update for file:", event.Name)
 			return
@@ -57,7 +71,6 @@ func main() {
 
 		log.Println("Detected change:", event)
 
-		// Determine the action based on event type.
 		action := "update"
 		if event.Op&fsnotify.Create != 0 {
 			action = "create"
@@ -66,14 +79,12 @@ func main() {
 			action = "delete"
 		}
 
-		// Only process events inside the watch directory.
 		relPath, _ := filepath.Rel(watchDir, event.Name)
 		if strings.HasPrefix(relPath, "..") {
 			log.Println("Ignored change outside sync folder:", event.Name)
 			return
 		}
 
-		// Debounce the event so multiple rapid events lead to a single sync.
 		scheduleSync(event.Name, action)
 	})
 
@@ -81,5 +92,5 @@ func main() {
 		log.Fatal(err)
 	}
 
-	select {} // Block forever
+	select {}
 }
