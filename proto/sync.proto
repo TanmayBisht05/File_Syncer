@@ -3,16 +3,16 @@ syntax = "proto3";
 package sync;
 option go_package = "./proto;proto";
 
-
 service SyncService {
-  rpc SendChange(FileChange) returns (Ack);
+  rpc Connect(stream FileChange) returns (stream FileChange);
 }
 
 message FileChange {
-  string filename = 1;
-  string action = 2; // create, update, delete
-  int64 timestamp = 3;
-  bytes content = 4;
+  string client_id = 1;
+  string filename = 2;
+  string action = 3; // create, update, delete
+  int64 timestamp = 4;
+  bytes content = 5;
 }
 
 message Ack {

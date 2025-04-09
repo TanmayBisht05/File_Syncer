@@ -23,10 +23,11 @@ const (
 
 type FileChange struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Filename      string                 `protobuf:"bytes,1,opt,name=filename,proto3" json:"filename,omitempty"`
-	Action        string                 `protobuf:"bytes,2,opt,name=action,proto3" json:"action,omitempty"` // create, update, delete
-	Timestamp     int64                  `protobuf:"varint,3,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	Content       []byte                 `protobuf:"bytes,4,opt,name=content,proto3" json:"content,omitempty"`
+	ClientId      string                 `protobuf:"bytes,1,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty"`
+	Filename      string                 `protobuf:"bytes,2,opt,name=filename,proto3" json:"filename,omitempty"`
+	Action        string                 `protobuf:"bytes,3,opt,name=action,proto3" json:"action,omitempty"` // create, update, delete
+	Timestamp     int64                  `protobuf:"varint,4,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	Content       []byte                 `protobuf:"bytes,5,opt,name=content,proto3" json:"content,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -59,6 +60,13 @@ func (x *FileChange) ProtoReflect() protoreflect.Message {
 // Deprecated: Use FileChange.ProtoReflect.Descriptor instead.
 func (*FileChange) Descriptor() ([]byte, []int) {
 	return file_proto_sync_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *FileChange) GetClientId() string {
+	if x != nil {
+		return x.ClientId
+	}
+	return ""
 }
 
 func (x *FileChange) GetFilename() string {
@@ -137,18 +145,18 @@ var File_proto_sync_proto protoreflect.FileDescriptor
 
 const file_proto_sync_proto_rawDesc = "" +
 	"\n" +
-	"\x10proto/sync.proto\x12\x04sync\"x\n" +
+	"\x10proto/sync.proto\x12\x04sync\"\x95\x01\n" +
 	"\n" +
-	"FileChange\x12\x1a\n" +
-	"\bfilename\x18\x01 \x01(\tR\bfilename\x12\x16\n" +
-	"\x06action\x18\x02 \x01(\tR\x06action\x12\x1c\n" +
-	"\ttimestamp\x18\x03 \x01(\x03R\ttimestamp\x12\x18\n" +
-	"\acontent\x18\x04 \x01(\fR\acontent\"\x1d\n" +
+	"FileChange\x12\x1b\n" +
+	"\tclient_id\x18\x01 \x01(\tR\bclientId\x12\x1a\n" +
+	"\bfilename\x18\x02 \x01(\tR\bfilename\x12\x16\n" +
+	"\x06action\x18\x03 \x01(\tR\x06action\x12\x1c\n" +
+	"\ttimestamp\x18\x04 \x01(\x03R\ttimestamp\x12\x18\n" +
+	"\acontent\x18\x05 \x01(\fR\acontent\"\x1d\n" +
 	"\x03Ack\x12\x16\n" +
-	"\x06status\x18\x01 \x01(\tR\x06status28\n" +
-	"\vSyncService\x12)\n" +
-	"\n" +
-	"SendChange\x12\x10.sync.FileChange\x1a\t.sync.AckB\x0fZ\r./proto;protob\x06proto3"
+	"\x06status\x18\x01 \x01(\tR\x06status2@\n" +
+	"\vSyncService\x121\n" +
+	"\aConnect\x12\x10.sync.FileChange\x1a\x10.sync.FileChange(\x010\x01B\x0fZ\r./proto;protob\x06proto3"
 
 var (
 	file_proto_sync_proto_rawDescOnce sync.Once
@@ -168,8 +176,8 @@ var file_proto_sync_proto_goTypes = []any{
 	(*Ack)(nil),        // 1: sync.Ack
 }
 var file_proto_sync_proto_depIdxs = []int32{
-	0, // 0: sync.SyncService.SendChange:input_type -> sync.FileChange
-	1, // 1: sync.SyncService.SendChange:output_type -> sync.Ack
+	0, // 0: sync.SyncService.Connect:input_type -> sync.FileChange
+	0, // 1: sync.SyncService.Connect:output_type -> sync.FileChange
 	1, // [1:2] is the sub-list for method output_type
 	0, // [0:1] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
