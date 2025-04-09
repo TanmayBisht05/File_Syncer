@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package sync;
+option go_package = "./proto;proto";
+
+
+service SyncService {
+  rpc SendChange(FileChange) returns (Ack);
+}
+
+message FileChange {
+  string filename = 1;
+  string action = 2; // create, update, delete
+  int64 timestamp = 3;
+  bytes content = 4;
+}
+
+message Ack {
+  string status = 1;
+}
