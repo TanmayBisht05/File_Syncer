@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"File_Syncer/auth/routes"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
@@ -12,7 +13,7 @@ import (
 func StartHTTPServer(port string) {
 	router := gin.Default()
 
-	// ✅ CORS middleware for frontend at http://localhost:5173
+	// CORS middleware for frontend at http://localhost:5173
 	router.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:5173"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
@@ -21,13 +22,13 @@ func StartHTTPServer(port string) {
 		MaxAge:           12 * time.Hour,
 	}))
 
-	// ✅ Register authentication routes
+	// Register authentication routes
 	routes.RegisterAuthRoutes(router)
 
-	// ✅ Register protected routes
+	// Register protected routes
 	routes.RegisterProtectedRoutes(router)
 
-	// ✅ Simple test route
+	// Simple test route
 	router.GET("/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{"message": "pong"})
 	})

@@ -33,5 +33,5 @@ func Connect() {
 	// Set to new database name
 	DB = Client.Database("file_syncer_db")
 
-	log.Println("✅ Connected to MongoDB Atlas and using database: file_syncer_db")
+	log.Println("Connected to MongoDB Atlas and using database: file_syncer_db")
 }
