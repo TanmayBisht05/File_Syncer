@@ -26,21 +26,40 @@ func Signup(c *gin.Context) {
 		return
 	}
 
+	// Check if email already exists
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	count, err := userCollection.CountDocuments(ctx, bson.M{"email": user.Email})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
+		return
+	}
+	if count > 0 {
+		c.JSON(http.StatusConflict, gin.H{"error": "User already exists"})
+		return
+	}
+
 	// Hash password
 	hashedPassword, _ := utils.HashPassword(user.Password)
 	user.Password = hashedPassword
 
 	// Insert user
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	_, err := userCollection.InsertOne(ctx, user)
+	_, err = userCollection.InsertOne(ctx, user)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "User already exists"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not create user"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "User created successfully"})
+	// Generate JWT and set it in HTTP-only cookie
+	token, err := utils.GenerateJWT(user.Username)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+		return
+	}
+
+	c.SetCookie("token", token, 3600*24, "/", "", false, true) // Secure=true in prod with HTTPS
+	c.JSON(http.StatusOK, gin.H{"username": user.Username, "email": user.Email})
 }
 
 func Login(c *gin.Context) {
@@ -60,6 +79,52 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	token, _ := utils.GenerateJWT(dbUser.Username)
-	c.JSON(http.StatusOK, gin.H{"token": token})
+	token, err := utils.GenerateJWT(dbUser.Username)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+		return
+	}
+
+	// Set token as HTTP-only cookie
+	c.SetCookie("token", token, 3600*24, "/", "", false, true) // Secure=true in prod
+	c.JSON(http.StatusOK, gin.H{"username": dbUser.Username, "email": dbUser.Email})
 }
+
+func Logout(c *gin.Context) {
+	// Invalidate the token by expiring the cookie
+	c.SetCookie("token", "", -1, "/", "", false, true)
+	c.JSON(http.StatusOK, gin.H{"message": "Logged out successfully"})
+}
+
+func CheckAuth(c *gin.Context) {
+	userID, exists := c.Get("userId")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Not authenticated"})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var user models.User
+	err := userCollection.FindOne(ctx, bson.M{"username": userID}).Decode(&user)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"username": user.Username,
+		"email":    user.Email,
+	})
+}
+
+// func CheckAuth(c *gin.Context) {
+// 	userID, exists := c.Get("userId")
+// 	if !exists {
+// 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Not authenticated"})
+// 		return
+// 	}
+
+// 	c.JSON(http.StatusOK, gin.H{"username": userID})
+// }

@@ -8,9 +8,9 @@ import (
 var jwtKey = []byte("supersecret") // use env in prod
 
 func GenerateJWT(username string) (string, error) {
-	claims := &jwt.RegisteredClaims{
-		Subject:   username,
-		ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+	claims := jwt.MapClaims{
+		"username": username,
+		"exp":      time.Now().Add(24 * time.Hour).Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

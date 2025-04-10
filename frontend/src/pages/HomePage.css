@@ -1,0 +1,26 @@
+.home-page {
+    min-height: 100vh;
+    background-color: #f9f9f9;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  }
+  
+  .home-content {
+    max-width: 800px;
+    margin: 100px auto 0;
+    padding: 2rem;
+    text-align: center;
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+  }
+  
+  .home-content h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .home-content p {
+    font-size: 1.2rem;
+    color: #555;
+  }
+  

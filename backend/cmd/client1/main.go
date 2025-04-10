@@ -17,7 +17,7 @@ import (
 
 const watchDir = "./sync"
 const clientID = "client1"
-const serverAddr = "172.20.55.253:50051"
+const serverAddr = "localhost:50051"
 
 func main() {
 	log.Println("Client attempting to connect to server at", serverAddr)
