@@ -1,0 +1,126 @@
+/* Reset default styles */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  }
+  
+  body {
+    background: linear-gradient(to right, #eef2f3, #8e9eab);
+    height: 100vh;
+  }
+  
+  /* Main container */
+  .signup-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100vh;
+  }
+  
+  
+  
+  /* Card styling */
+  .signup-card {
+    background-color: #ffffff;
+    padding: 2.5rem 2rem;
+    border-radius: 20px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+    
+  }
+  
+  /* Heading */
+  .signup-card h2 {
+    margin-bottom: 2rem;
+    color: #222;
+    font-size: 1.8rem;
+  }
+  
+  /* Input fields */
+  .signup-card input {
+    width: 100%;
+    padding: 0.9rem 1rem;
+    margin: 0.6rem 0;
+    border-radius: 12px;
+    border: 1px solid #ccc;
+    font-size: 1rem;
+    background-color: #f9f9f9;
+    transition: 0.3s ease;
+    color: #222;
+  }
+  
+  .signup-card input:focus {
+    border-color: #10b981;
+    outline: none;
+    background-color: #fff;
+  }
+  
+  /* Button */
+  .signup-card button {
+    width: 100%;
+    padding: 0.9rem;
+    background-color: #10b981;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    margin-top: 1.2rem;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .signup-card button:hover {
+    background-color: #059669;
+  }
+  
+  /* Footer text */
+  .signup-card p {
+    margin-top: 1rem;
+    font-size: 0.95rem;
+    color: #555;
+  }
+  
+  .signup-card a {
+    color: #10b981;
+    text-decoration: none;
+    font-weight: 500;
+  }
+  
+  .signup-card a:hover {
+    text-decoration: underline;
+  }
+
+  .signup-card input::placeholder {
+    color: #888; /* Light gray placeholder */
+  }
+
+
+  .password-field {
+    position: relative;
+    width: 100%;
+  }
+  
+  .password-field input {
+    width: 100%;
+    padding-right: 3rem;
+  }
+  
+  .toggle-password {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #3b82f6;
+    user-select: none;
+  }
+  
+  
+  

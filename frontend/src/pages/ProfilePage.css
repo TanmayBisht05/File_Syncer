@@ -1,0 +1,17 @@
+/* frontend/pages/ProfilePage.css */
+.profile-container {
+    max-width: 600px;
+    margin: 3rem auto;
+    padding: 2rem;
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+  }
+  
+  .profile-info {
+    margin-top: 1rem;
+    text-align: left;
+    font-size: 1.1rem;
+  }
+  
